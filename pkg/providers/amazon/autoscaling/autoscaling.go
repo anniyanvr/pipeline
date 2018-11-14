@@ -43,7 +43,13 @@ func (group *Group) IsHealthy() (bool, error) {
 	instances := group.getInstances()
 	for _, instance := range instances {
 		if instance.IsHealthyAndInService() {
+			if group.manager.StopMetricTimer(instance) {
+				group.manager.RegisterSpotFulfillmentDuration(instance, group)
+			}
 			ok++
+		}
+		if *instance.LifecycleState == "Pending" {
+			group.manager.StartMetricTimer(instance)
 		}
 	}
 
@@ -61,7 +67,7 @@ func (group *Group) IsHealthy() (bool, error) {
 	}
 
 	for _, spotRequest := range spotRequests {
-		if !spotRequest.IsPending() && !spotRequest.IsFulfilled() {
+		if spotRequest.IsActive() && !spotRequest.IsPending() && !spotRequest.IsFulfilled() {
 			return false, ec2.NewSpotRequestFailedError(spotRequest.GetStatusCode())
 		}
 	}
@@ -73,7 +79,7 @@ func (group *Group) getInstances() []*Instance {
 	instances := make([]*Instance, 0)
 
 	for _, inst := range group.Instances {
-		instances = append(instances, NewInstance(inst))
+		instances = append(instances, NewInstance(group.manager, inst))
 	}
 
 	return instances

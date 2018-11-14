@@ -219,7 +219,7 @@ func (c *EKSCluster) CreateCluster() error {
 		action.NewGenerateVPCConfigRequestAction(c.log, creationContext, eksStackName, c.GetOrganizationId()),
 		action.NewCreateEksClusterAction(c.log, creationContext, c.modelCluster.EKS.Version),
 		action.NewCreateUpdateNodePoolStackAction(c.log, true, creationContext, c.modelCluster.EKS.NodePools...),
-		action.NewWaitForHealthyAutoscalingGroupsAction(c.log, 30, 20*time.Second, creationContext, c.modelCluster.EKS.NodePools...),
+		action.NewWaitForHealthyAutoscalingGroupsAction(c.log, 30, 5*time.Second, creationContext, c.modelCluster.EKS.NodePools...),
 	}
 
 	_, err = utils.NewActionExecutor(c.log).ExecuteActions(actions, nil, false)
@@ -659,7 +659,7 @@ func (c *EKSCluster) UpdateCluster(updateRequest *pkgCluster.UpdateClusterReques
 	existingNodePools := make([]*model.AmazonNodePoolsModel, 0)
 	existingNodePools = append(existingNodePools, nodePoolsToCreate...)
 	existingNodePools = append(existingNodePools, nodePoolsToUpdate...)
-	waitAction := action.NewWaitForHealthyAutoscalingGroupsAction(c.log, 30, 20*time.Second, createUpdateContext, existingNodePools...)
+	waitAction := action.NewWaitForHealthyAutoscalingGroupsAction(c.log, 30, 5*time.Second, createUpdateContext, existingNodePools...)
 
 	actions = append(actions, createNodePoolAction, updateNodePoolAction, deleteNodePoolAction, waitAction)
 

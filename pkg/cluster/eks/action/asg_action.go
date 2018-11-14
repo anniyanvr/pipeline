@@ -57,7 +57,9 @@ func (a *WaitForHealthyAutoscalingGroupsAction) GetName() string {
 
 // ExecuteAction executes the WaitForHealthyAutoscalingGroupsAction
 func (a *WaitForHealthyAutoscalingGroupsAction) ExecuteAction(input interface{}) (output interface{}, err error) {
-	m := autoscaling.NewManager(a.context.Session)
+	m := autoscaling.NewManager(a.context.Session, autoscaling.MetricsEnabled(true), autoscaling.Logger{
+		FieldLogger: a.log,
+	})
 
 	for i := 0; i <= a.attempts; i++ {
 		nodePoolOk := 0

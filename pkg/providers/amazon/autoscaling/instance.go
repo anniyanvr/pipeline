@@ -21,14 +21,38 @@ import (
 // Instance extends autoscaling.Instance
 type Instance struct {
 	*autoscaling.Instance
+	manager *Manager
 }
 
 // NewInstance initialises and gives back a new Instance
-func NewInstance(instance *autoscaling.Instance) *Instance {
-	return &Instance{Instance: instance}
+func NewInstance(manager *Manager, instance *autoscaling.Instance) *Instance {
+	return &Instance{
+		Instance: instance,
+		manager:  manager,
+	}
 }
 
 // IsHealthyAndInService is true if the instance is healthy and in InService state
 func (i *Instance) IsHealthyAndInService() bool {
 	return *i.HealthStatus == "Healthy" && *i.LifecycleState == "InService"
+}
+
+// GetLaunchConfiguration gets the LaunchConfiguration of the instance
+func (i *Instance) GetLaunchConfiguration() (*autoscaling.LaunchConfiguration, error) {
+	input := &autoscaling.DescribeLaunchConfigurationsInput{
+		LaunchConfigurationNames: []*string{
+			i.LaunchConfigurationName,
+		},
+	}
+
+	result, err := i.manager.asSvc.DescribeLaunchConfigurations(input)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.LaunchConfigurations) > 0 {
+		return result.LaunchConfigurations[0], nil
+	}
+
+	return nil, nil
 }
